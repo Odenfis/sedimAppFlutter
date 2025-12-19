@@ -6,7 +6,8 @@ A new Flutter project.
 
 This project is a starting point for a Flutter application.
 
-Consideraciones base:
+## Consideraciones Base
+
 Version 1:
 flutter pub add dio dio_cookie_manager cookie_jar google_fonts font_awesome_flutter
 
