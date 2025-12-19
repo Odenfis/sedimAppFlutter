@@ -59,13 +59,35 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
+
+    //variable de los colores de los temas
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = Theme.of(context).cardColor;
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color;
+    final subtitleColor = isDark ? Colors.grey : Colors.grey.shade600;
+
+
     return Card(
-      color: Color(0xFF1e1e1e),
+      //color: Color(0xFF1e1e1e),
+      color: cardColor, //cambio de fondo dinámico
+      elevation: isDark ? 0 : 2,
       margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       child: ExpansionTile(
-        title: Text(widget.product.nombre, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        subtitle: Text("COD: ${widget.product.codPro} | P1: ${widget.product.p1}", style: TextStyle(color: Colors.grey)),
+        title: Text(
+          widget.product.nombre, 
+          style: TextStyle(
+            color: textColor,
+            //color: Colors.white, 
+            fontWeight: FontWeight.bold
+            )),
+        subtitle: Text(
+          "COD: ${widget.product.codPro} | P1: ${widget.product.p1}", 
+          style: TextStyle(
+            color: subtitleColor
+            //color: Colors.grey
+            )),
         iconColor: Colors.blueAccent,
+        collapsedIconColor: isDark ? Colors.grey : Colors.grey.shade400,
         children: [
           Padding(
             padding: EdgeInsets.all(15),
@@ -75,10 +97,10 @@ class _ProductCardState extends State<ProductCard> {
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
                   crossAxisCount: 3,
-                  childAspectRatio: 2.5,
+                  childAspectRatio: 2.5, //ajuste de los inpunts a 2.2
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  children: List.generate(6, (index) => _buildPriceInput(index)),
+                  children: List.generate(6, (index) => _buildPriceInput(index, isDark, textColor!)),
                   ),
                   SizedBox(height: 15),
                   SizedBox(
@@ -86,8 +108,8 @@ class _ProductCardState extends State<ProductCard> {
                     child: ElevatedButton.icon(
                       icon: _isSaving
                             ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Icon(Icons.save, size: 18),                       
-                      label: Text(_isSaving ? "Guardando..." : "GUARDAR CAMBIOS"),
+                            : Icon(Icons.save, size: 18, color: Colors.white),                       
+                      label: Text(_isSaving ? "Guardando..." : "GUARDAR CAMBIOS", style: TextStyle(color: Colors.white),),
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                       onPressed: _isSaving ? null : _save,
                       ),
@@ -100,17 +122,24 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
-  Widget _buildPriceInput(int index){
+  Widget _buildPriceInput(int index, bool isDark, Color textColor){
     return TextField(
       controller: _controllers[index],
       keyboardType: TextInputType.numberWithOptions(decimal: true),
-      style: TextStyle(color: Colors.white, fontSize: 13),
+      style: TextStyle(
+        color: textColor,
+        //color: Colors.white, 
+        fontSize: 13),
       decoration: InputDecoration(
         labelText: 'P${index + 1}',
-        labelStyle: TextStyle(color: Colors.grey, fontSize: 11),
+        labelStyle: TextStyle(
+          color: isDark ? Colors.grey : Colors.grey.shade600,
+          //color: Colors.grey, 
+          fontSize: 11),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(5)),
         filled: true,
-        fillColor: Colors.black12,
+        fillColor: isDark ? Colors.black26 : Colors.grey.shade100,
+        //fillColor: Colors.black12,
         contentPadding: EdgeInsets.symmetric(horizontal: 10)
       ),
     );

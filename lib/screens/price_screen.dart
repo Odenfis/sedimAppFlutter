@@ -53,27 +53,41 @@ class _PriceScreenState extends State<PriceScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    //nuevas variables del tema
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    //final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final cardColor = Theme.of(context).cardColor;
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color;
+    final inputFillColor = isDark ? Color(0xFF1e1e1e) : Colors.white;
+
     return Scaffold(
-      backgroundColor: Color(0xFF0f1012),
+      //backgroundColor: Color(0xFF0f1012),     
+      //backgroundColor: bgColor,
       appBar: AppBar(
         title: Text('Gestion de Precios'),
-        backgroundColor: Color(0xFF1e1e1e),
+        //backgroundColor: Color(0xFF1e1e1e),
       ),
       body: Column(
         children: [
           //1. Seleccionador de Empresas
           Container(
             padding: EdgeInsets.all(15),
-            color: Color(0xFF1e1e1e),
-            child: DropdownButtonFormField(
-              dropdownColor: Color(0xFF2c2c2c),
-              style: TextStyle(color: Colors.white),
+            //color: Color(0xFF1e1e1e),
+            color: isDark ? Colors.black12 : Colors.white,
+            child: DropdownButtonFormField<String>(
+              dropdownColor: cardColor,
+              //dropdownColor: Color(0xFF2c2c2c),
+              //style: TextStyle(color: Colors.white),
+              style: TextStyle(color: textColor),
               initialValue: _selectedCompany,
               //value: _selectedCompany,
               decoration: InputDecoration(
                 labelText: 'Seleccione una Empresa',
-                labelStyle: TextStyle(color: Colors.grey),
-                border: OutlineInputBorder()
+                //labelStyle: TextStyle(color: Colors.grey),
+                labelStyle: TextStyle(color: isDark ? Colors.grey : Colors.grey.shade700),
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: inputFillColor
               ),
               items: _companies.entries.map((e)=> DropdownMenuItem(value: e.key, child: Text(e.value))).toList(), 
               onChanged: (val) => _loadProducts(val!)
@@ -85,15 +99,27 @@ class _PriceScreenState extends State<PriceScreen> {
             padding: EdgeInsets.all(15),
             child: TextField(
               controller: _searchCtrl,
-              style: TextStyle(color: Colors.white),
+              //style: TextStyle(color: Colors.white),
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 hintText: 'Buscar producto...',
-                hintStyle: TextStyle(color: Colors.grey),
+                //hintStyle: TextStyle(color: Colors.grey),
+                hintStyle: TextStyle(color: isDark ? Colors.grey : Colors.grey.shade500),
                 prefixIcon: Icon(Icons.search, color: Colors.blueAccent),
                 filled: true,
-                fillColor: Color(0xFF1e1e1e),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))
-              ),
+                //fillColor: Color(0xFF1e1e1e),
+                fillColor: inputFillColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: isDark ? BorderSide.none : BorderSide(color: Colors.grey)
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.transparent : Colors.grey.shade300
+                    )
+                  )
+              ),              
               onChanged: _filterProducts,
             ),
           ),
