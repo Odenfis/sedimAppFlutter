@@ -51,6 +51,15 @@ class HomeScreen extends StatelessWidget {
               textColor
             ),
             _buildMenuCard(
+              context, 
+              'Gestión de \nClaves', 
+              Icons.vpn_key, 
+              Colors.orangeAccent, 
+              KeysScreen(), 
+              cardColor, 
+              textColor
+              ),
+            _buildMenuCard(
               context,
               "Proximamente",
               FontAwesomeIcons.box,

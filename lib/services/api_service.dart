@@ -22,16 +22,44 @@ class ApiService {
     _cookieJar = CookieJar();
     _dio.interceptors.add(CookieManager(_cookieJar));
   }
-
+  
   //Manejo del login
-  Future<bool> login(String user, String pass) async {
+  Future<Map<String, dynamic>?> login(String user, String pass) async {
     try{
-      await _dio.post('/api/login', data: {'usuario':user, 'password': pass});
-      return true;
-    } catch(e){
-      return false;
+      final response = await _dio.post('/api/login', data: {
+        'usuario' : user,
+        'password' : pass
+      });
+      //server tiene estructura solo devolveremos usuario
+      return response.data['user'];
+    } catch (e){
+      return null;
     }
   }
+  /*
+  Future<Map<String, dynamic>?> login(String user, String pass) async {
+    try {
+      print("🔵 Intentando conectar a: $baseUrl/api/login"); // LOG 1
+      
+      final response = await _dio.post('/api/login', data: {
+        'usuario': user, 
+        'password': pass
+      });
+      
+      print("🟢 Respuesta del servidor: ${response.data}"); // LOG 2
+      return response.data['user']; 
+
+    } catch (e) {
+      print("🔴 ERROR GRAVE: $e"); // <--- ESTO ES LO QUE NECESITAMOS VER
+      if (e is DioException) {
+         print("Tipo de error Dio: ${e.type}");
+         print("Mensaje: ${e.message}");
+         print("Respuesta del server: ${e.response}");
+      }
+      return null;
+    }
+  }*/
+
   //Obtener productos de empresa
   Future<List<dynamic>> getProducts(String empresaCode) async {
     try{
@@ -45,6 +73,25 @@ class ApiService {
   Future<bool> updatePrices(String codPro, Map<String, dynamic> prices) async {
     try{
       await _dio.put('/api/precios/$codPro', data: prices);
+      return true;
+    } catch(e){
+      return false;
+    }
+  }
+  //gestion de claves
+  //como obtengo la lista
+  Future<List<dynamic>> getSystemKeys() async {
+    try{
+      final response = await _dio.get('/api/admin/claves');
+      return response.data;
+    } catch(e){
+      throw Exception('Error cargando claves');
+    }
+  }
+  //update de claves web
+  Future<bool> updateSystemKey(int nNumero, double valor) async {
+    try{
+      await _dio.put('/api/admin/claves/$nNumero', data: {'valor': valor});
       return true;
     } catch(e){
       return false;

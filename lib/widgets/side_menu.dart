@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:sedim_app/providers/theme_provider.dart';
+import 'package:sedim_app/providers/user_provider.dart';
 import 'package:sedim_app/screens/screens.dart';
 
 class SideMenu extends StatelessWidget {
@@ -11,6 +12,7 @@ class SideMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final user = Provider.of<UserProvider>(context).user;
     final isDark = themeProvider.isDark;
 
     return Drawer(
@@ -31,8 +33,14 @@ class SideMenu extends StatelessWidget {
               end: AlignmentGeometry.bottomRight
                 )
             ),
-            accountName: Text('Administrador', style: TextStyle(fontWeight: FontWeight.bold),), 
-            accountEmail: Text('admin@sedimcorp.com'),
+            accountName: Text(
+              user?.nombre ?? 'Usuario',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ), 
+            accountEmail: Text(
+              '${user?.rol ?? 'Sin Rol'} | @${user?.usuario ?? ''}',
+              style: TextStyle(color: Colors.white70),
+            ),
             currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.white,
               child: Padding(
@@ -58,7 +66,7 @@ class SideMenu extends StatelessWidget {
               ),
           ),
           Divider(),
-          //TODO: Agregar soon
+          //TODO: Agregar tipos de configuraciones
           ListTile(
             leading: Icon(Icons.settings),
             title: Text('Configuraciones'),

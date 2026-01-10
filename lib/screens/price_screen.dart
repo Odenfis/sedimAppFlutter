@@ -20,10 +20,22 @@ class _PriceScreenState extends State<PriceScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   final Map<String, String> _companies = {
     '02':'Cocineria',
-    '06':'Mar Picante', //cambiar por Mar Picante
-    '04':'Abruzzo'
+    '04':'Mar Picante', //cambiar por Mar Picante
+    '06':'Abruzzo'
   };
-  void _loadProducts(String code) async {
+  //agrego future para poder utilizar el refresh indicator nuevo para visualizar
+  //nuevos productos
+  Future<void> _loadProducts(String code) async {
+
+    //primera muestra sin refrescar
+    if (_allProducts.isEmpty){
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    _selectedCompany = code;
+
     setState(() {
     _isLoading = true;
     _selectedCompany = code;
@@ -31,16 +43,24 @@ class _PriceScreenState extends State<PriceScreen> {
     });
     try{
       final data = await ApiService().getProducts(code);
+      if (mounted){
       setState(() {
         _allProducts = data.map((json) => Product.fromJson(json)).toList();
         _filteredProducts = _allProducts;
+        //si el usuario tiene algo escrito en el buscador, volvemos a filtrar
+        if(_searchCtrl.text.isEmpty){
+          _filterProducts(_searchCtrl.text);
+        }
       });
+      }
     } catch (e){
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error cargando productos')));
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
   void _filterProducts(String query){
@@ -126,16 +146,29 @@ class _PriceScreenState extends State<PriceScreen> {
           Expanded(
             child: _isLoading
             ? Center(child: CircularProgressIndicator())
-            : ListView.builder(
-              itemCount: _filteredProducts.length,
-              itemBuilder: (ctx, i) {
-                final prod = _filteredProducts[i];
-                return ProductCard(
-                  key: ValueKey(prod.codPro),
-                  product: prod
-                  );
-              }
-              )
+            : RefreshIndicator(
+              //color del circulo de carga
+              color: Colors.white,
+              backgroundColor: Colors.blueAccent,
+              //funcion al deslizar hacia abajo
+              onRefresh: () async {
+                if(_selectedCompany != null){
+                  await _loadProducts(_selectedCompany!);
+                }
+              },
+              child: ListView.builder(
+                //con esto funciona scroll, lest test
+                physics: AlwaysScrollableScrollPhysics(),
+                itemCount: _filteredProducts.length,
+                itemBuilder: (ctx, i) {
+                  final prod = _filteredProducts[i];
+                  return ProductCard(
+                    key: ValueKey(prod.codPro),
+                    product: prod
+                    );
+                }
+                ),
+            )
             )
         ],
       ),

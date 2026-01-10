@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:sedim_app/providers/theme_provider.dart';
+import 'package:sedim_app/providers/user_provider.dart';
 import 'package:sedim_app/screens/screens.dart';
 
 void main() {
   runApp(
     //Inyectamos el proveedor del tema antes de que nazca la app
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider())
+      ],     
       child: MyApp(),
     )
   );

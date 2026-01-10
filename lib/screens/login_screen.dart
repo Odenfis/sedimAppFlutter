@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:sedim_app/models/user_model.dart';
+import 'package:sedim_app/providers/user_provider.dart';
 import 'package:sedim_app/screens/screens.dart';
 import 'package:sedim_app/services/api_service.dart';
 
@@ -14,29 +17,38 @@ class _LoginScreenState extends State<LoginScreen> {
   final _userCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _isLoading = false;
+  //variable para sneekpeak de contraseña
+  bool _isObscure = true;
 
   //métodos
   void _login() async {
     setState(() => _isLoading = true);
-    final success = await ApiService().login(_userCtrl.text, _passCtrl.text);
+    //call api
+    final userData = await ApiService().login(_userCtrl.text, _passCtrl.text);
     setState(() => _isLoading = false);
-    //consultamos
-    if (success && mounted){
+    if (userData != null && mounted){
+      //json a modelo
+      final user = UserModel.fromJson(userData);
+      //save provider global
+      Provider.of<UserProvider>(context, listen: false).setUser(user);
+      //navegamos
       Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const HomeScreen()));
+        context, MaterialPageRoute(builder: (_) => HomeScreen()));
     } else if (mounted){
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Credenciales incorrectas o error de conexión'))
+        SnackBar(content: Text('Credenciales incorrectas o error de conexión'))
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    //agregamos temas por si acaso
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color;
     return Scaffold(
-      backgroundColor: Color(0xFF0f1012),
+      //backgroundColor: Color(0xFF0f1012),
+      //dejamos que el fondo lo maneje el main (espero...)
       body: Center(
          child: SingleChildScrollView(
           padding: EdgeInsets.all(30),
@@ -48,12 +60,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20)
+                  borderRadius: BorderRadius.circular(20),
+                  //agregamos para manejar sombra en modo claro
+                  boxShadow: [
+                    if(!isDark)
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 15,
+                        offset: Offset(0, 5)
+                      )
+                  ]
                 ),
                 child: Image.asset('assets/logo.png', height: 80),
               ),
               SizedBox(height: 40),
-              Text('Bienvenido', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              Text('Bienvenido', style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.bold)),
               SizedBox(height: 30),
               _buildInput(_userCtrl,"Usuario",Icons.person),
               SizedBox(height: 15),
@@ -63,7 +84,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)
+                    )
+                    ),
                   onPressed: _isLoading ? null : _login, 
                   child: _isLoading
                   ? CircularProgressIndicator(color: Colors.white)
@@ -78,17 +104,52 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 Widget _buildInput(TextEditingController ctrl, String label, IconData icon, {bool isPass = false}){
+
+  //agregamos cambios por tema aquí
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final inputFill = isDark ? Color(0xFF1e1e1e) : Colors.white;
+  final hintColor = isDark ? Colors.grey : Colors.grey.shade600;
+
+
   return TextField(
     controller: ctrl,
-    obscureText: isPass,
-    style: TextStyle(color: Colors.white),
+    //obscureText: isPass,
+    obscureText: isPass ? _isObscure : false,
+    style: TextStyle(
+      //color: Colors.white
+      color: Theme.of(context).textTheme.bodyLarge?.color
+      ),
     decoration: InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: Colors.grey),
+      //labelStyle: TextStyle(color: Colors.grey),
+      labelStyle: TextStyle(color: hintColor),            
+      prefixIcon: Icon(icon, color: Colors.blueAccent),
+      //agregamos ojito
+      suffixIcon: isPass
+      ? IconButton(
+        icon: Icon(
+          //oculto es isObscure true se muestra ojo
+          //caso contrario no se muestra
+          _isObscure ? Icons.visibility : Icons.visibility_off,
+          color: Colors.grey,
+        ),
+        onPressed: (){
+          setState(() {
+            _isObscure = !_isObscure;
+          });
+        },        
+        )
+      : null,
       filled: true,
-      fillColor: Color(0xFF1e1e1e),
+      //fillColor: Color(0xFF1e1e1e),
+      fillColor: inputFill,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-      labelStyle: TextStyle(color: Colors.grey)
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: isDark ? BorderSide.none : BorderSide(
+          color: Colors.grey.shade300
+        )
+      )
     ),
   );
 }
