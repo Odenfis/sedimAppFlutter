@@ -26,10 +26,10 @@ class _KeysScreenState extends State<KeysScreen> {
     });
   }
   void _checkPermissionAndLoad(){
-    final user = Provider.of<UserProvider>(context, listen: false).user;
-    //valido rol
-    //aplico validacion sin importar mayusc and minusc
-    if (user != null && user.rol.toUpperCase().contains("ADMIN")){
+    //Filtro por rol usando el UserProvider (contrato: claves solo Administrador,
+    //el backend ahora responde 403 'Acceso no autorizado' al resto)
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.isAdmin){
       setState(() => _hasAccess = true);
       _loadKeys();      
     } else {
@@ -40,21 +40,21 @@ class _KeysScreenState extends State<KeysScreen> {
     }
   }
   Future<void> _loadKeys() async {
-    setState(() => _isLoading = true);
-    try{
+    if (mounted) setState(() => _isLoading = true);
+    try {
       final data = await ApiService().getSystemKeys();
+      if (!mounted) return;
       setState(() {
         _keys = data.map((json) => SystemKey.fromJson(json)).toList();
       });
-    } catch(e){
+    } catch (e) {
+      if (!mounted) return;
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error cargando claves, verificar')
-          )
+        const SnackBar(content: Text('Error cargando claves, verificar')),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
   //working con dialogs
@@ -158,33 +158,34 @@ class _KeysScreenState extends State<KeysScreen> {
   Future<void> _updateValue(SystemKey keyItem, double newValue) async {
     //mostrar carga
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text('Actualizando...'),
         duration: Duration(milliseconds: 500),
-        )
-      );
-      final success = await ApiService().updateSystemKey(keyItem.nNumero, newValue);
+      ),
+    );
+    final success = await ApiService().updateSystemKey(
+      keyItem.nNumero,
+      newValue,
+    );
 
-      if (success) {
-        await _loadKeys(); //volver a carga lista
-        if (mounted){
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('¡Actualizado correctamente!'),
-              backgroundColor: Colors.green,
-              )
-          );
-        } else {
-          if (mounted){
-            ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error al guardar'),
-              backgroundColor: Colors.red,
-              )
-          );
-          }
-        }
-      }
+    if (!mounted) return;
+    if (success) {
+      await _loadKeys(); //volver a carga lista
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Actualizado correctamente!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error al guardar'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override

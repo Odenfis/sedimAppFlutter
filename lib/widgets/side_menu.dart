@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:sedim_app/providers/company_provider.dart';
 import 'package:sedim_app/providers/theme_provider.dart';
 import 'package:sedim_app/providers/user_provider.dart';
 import 'package:sedim_app/screens/screens.dart';
+import 'package:sedim_app/services/api_service.dart';
 
 class SideMenu extends StatelessWidget {
    
@@ -61,29 +63,29 @@ class SideMenu extends StatelessWidget {
               activeThumbColor: Colors.blueAccent, 
               onChanged: (value) {
                 //cambiamos
-                themeProvider.toogleTheme();
+                themeProvider.toggleTheme();
               }
               ),
           ),
           Divider(),
-          //TODO: Agregar tipos de configuraciones
           ListTile(
             leading: Icon(Icons.settings),
             title: Text('Configuraciones'),
-            onTap: (){
+            subtitle: Text(
+              'Tema y preferencias de la app',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            onTap: () {
               Navigator.pop(context); //close menu
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Proximamente...')
-                  )
-                );
+              _showSettingsSheet(context, isDark, themeProvider);
             },
           ),
           ListTile(
-            leading: Icon(FontAwesomeIcons.circleInfo),
+            leading: FaIcon(FontAwesomeIcons.circleInfo),
             title: Text('Acerca de'),
             onTap: () {
-              //TODO: completar someday
+              Navigator.pop(context);
+              _showAboutDialog(context);
             },
           ),
           Divider(),
@@ -91,15 +93,89 @@ class SideMenu extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.exit_to_app, color: Colors.redAccent),
             title: Text('Cerrar Sesión', style: TextStyle(color: Colors.redAccent)),
-            onTap: () {
+            onTap: () async {
+              //1. Revocamos tokens en el servidor y limpiamos el local (JWT)
+              await ApiService().logout();
+              if (!context.mounted) return;
+              //2. Limpiamos el estado global
+              Provider.of<UserProvider>(context, listen: false).clearUser();
+              Provider.of<CompanyProvider>(context, listen: false).limpiar();
+              //3. Volvemos al login
               Navigator.pushReplacement(
-                context, 
-                MaterialPageRoute(
-                  builder: (_) => LoginScreen()
-                  )
-                );
+                context,
+                MaterialPageRoute(builder: (_) => LoginScreen()),
+              );
             },
           )
+        ],
+      ),
+    );
+  }
+
+  void _showSettingsSheet(
+    BuildContext context,
+    bool isDark,
+    ThemeProvider themeProvider,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SwitchListTile(
+              title: const Text('Modo Oscuro'),
+              secondary: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
+              value: isDark,
+              onChanged: (_) {
+                themeProvider.toggleTheme();
+                Navigator.pop(ctx);
+              },
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(
+                'Más opciones de configuración próximamente.',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sedimcorp App'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Versión 1.0.0+1'),
+            SizedBox(height: 8),
+            Text(
+              'Gestión de precios y claves del sistema. '
+              'Inicia sesión para administrar productos por empresa.',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cerrar'),
+          ),
         ],
       ),
     );

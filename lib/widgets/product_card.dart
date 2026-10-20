@@ -34,8 +34,34 @@ class _ProductCardState extends State<ProductCard> {
     ];
   }
 
+  @override
+  void didUpdateWidget(covariant ProductCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.product.codPro != widget.product.codPro) {
+      final values = [
+        widget.product.p1,
+        widget.product.p2,
+        widget.product.p3,
+        widget.product.p4,
+        widget.product.p5,
+        widget.product.p6,
+      ];
+      for (var i = 0; i < _controllers.length; i++) {
+        _controllers[i].text = values[i].toString();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
   void _save() async {
-    setState(()=> _isSaving = true);
+    setState(() => _isSaving = true);
     final data = {
       'p1' : double.tryParse(_controllers[0].text) ?? 0,
       'p2' : double.tryParse(_controllers[1].text) ?? 0,
@@ -46,9 +72,10 @@ class _ProductCardState extends State<ProductCard> {
     };
     
     final success = await ApiService().updatePrices(widget.product.codPro, data);
-    setState(()=> _isSaving = false);
+    if (!mounted) return;
+    setState(() => _isSaving = false);
 
-    if(mounted) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(success ? "Precios actualizados" : "Error al guardar"),
         backgroundColor: success ? Colors.green : Colors.red,

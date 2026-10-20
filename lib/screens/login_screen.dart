@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sedim_app/models/user_model.dart';
+import 'package:sedim_app/providers/company_provider.dart';
 import 'package:sedim_app/providers/user_provider.dart';
 import 'package:sedim_app/screens/screens.dart';
 import 'package:sedim_app/services/api_service.dart';
@@ -23,17 +24,21 @@ class _LoginScreenState extends State<LoginScreen> {
   //métodos
   void _login() async {
     setState(() => _isLoading = true);
-    //call api
-    final userData = await ApiService().login(_userCtrl.text, _passCtrl.text);
+    //call api (ahora devuelve usuario + tokens JWT)
+    final result = await ApiService().login(_userCtrl.text, _passCtrl.text);
     setState(() => _isLoading = false);
-    if (userData != null && mounted){
-      //json a modelo
-      final user = UserModel.fromJson(userData);
-      //save provider global
-      Provider.of<UserProvider>(context, listen: false).setUser(user);
+    if (result.exitoso && mounted){
+      //json a modelo (incluye permisos[] y empresas[])
+      final user = UserModel.fromJson(result.user!);
+      //save provider global (persiste usuario + tokens si el backend los emitió)
+      await Provider.of<UserProvider>(context, listen: false)
+          .setUser(user, accessToken: result.accessToken, refreshToken: result.refreshToken);
+      if (!mounted) return;
+      //cargamos las empresas autorizadas para el dropdown multi-empresa
+      Provider.of<CompanyProvider>(context, listen: false).setEmpresas(user.empresas);
       //navegamos
       Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (_) => HomeScreen()));
+        context, MaterialPageRoute(builder: (_) => const HomeScreen()));
     } else if (mounted){
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Credenciales incorrectas o error de conexión'))

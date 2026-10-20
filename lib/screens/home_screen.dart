@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:sedim_app/models/permission_model.dart';
+import 'package:sedim_app/providers/user_provider.dart';
 import 'package:sedim_app/screens/screens.dart';
 import 'package:sedim_app/widgets/widgets.dart';
 
@@ -10,6 +13,10 @@ class HomeScreen extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
+    //Filtro UI por permisos: módulos visibles según permisos[] del login
+    final userProvider = Provider.of<UserProvider>(context);
+    final puedeVerPrecios = userProvider.hasPermission(PermissionModel.herramientas);
+    final puedeVerClaves = userProvider.isAdmin; //claves: solo Administrador (backend 403)
 
     //obtener colores del tema para el homescreen
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -41,21 +48,23 @@ class HomeScreen extends StatelessWidget {
           crossAxisSpacing: 15,
           mainAxisSpacing: 15,
           children: [
+            if (puedeVerPrecios)
             _buildMenuCard(
               context,
               "Cambio de \n Precios",
               FontAwesomeIcons.tags,
               Colors.blueAccent,
-              PriceScreen(),
+              const PriceScreen(),
               cardColor,
               textColor
             ),
+            if (puedeVerClaves)
             _buildMenuCard(
               context, 
               'Gestión de \nClaves', 
               Icons.vpn_key, 
               Colors.orangeAccent, 
-              KeysScreen(), 
+              const KeysScreen(), 
               cardColor, 
               textColor
               ),
@@ -75,18 +84,26 @@ class HomeScreen extends StatelessWidget {
   }
 
 //Widget
-Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color iconColor, Widget? page, Color bgColor, Color? txtColor){
+Widget _buildMenuCard(BuildContext context, String title, dynamic icon, Color iconColor, Widget? page, Color bgColor, Color? txtColor){
+  final isEnabled = page != null;
+  final isDark = Theme.of(context).brightness == Brightness.dark;
   return GestureDetector(
-    onTap: page == null ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
-    child: Container(
+    onTap: !isEnabled
+        ? () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Módulo próximamente...')),
+            )
+        : () => Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
+    child: Opacity(
+      opacity: isEnabled ? 1.0 : 0.7,
+      child: Container(
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           //agregado de sombra para profundidad (espero)
-          if (Theme.of(context).brightness == Brightness.light)
+          if (!isDark)
           BoxShadow(
-            color: Colors.black,
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: Offset(0, 5)
           )
@@ -96,7 +113,10 @@ Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color i
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FaIcon(icon, size: 40, color: iconColor),
+          if (icon is FaIconData)
+            FaIcon(icon, size: 40, color: iconColor)
+          else if (icon is IconData)
+            Icon(icon, size: 40, color: iconColor),
           SizedBox(height: 15),
           Text(
             title,
@@ -105,7 +125,8 @@ Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color i
           )
         ],
       ),
-    ),
+      ),
+      ),
   );
 }
 

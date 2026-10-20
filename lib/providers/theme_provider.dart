@@ -5,8 +5,12 @@ class ThemeProvider extends ChangeNotifier {
   bool _isDark = true;
   bool get isDark => _isDark;
   //Func. para cambiar de tema
-  void toogleTheme(){
+  void toggleTheme() {
     _isDark = !_isDark;
     notifyListeners(); //listener para avisar cambios en toda la app
   }
+
+  // Alias por compatibilidad (corrige typo histórico).
+  @Deprecated('Usa toggleTheme()')
+  void toogleTheme() => toggleTheme();
 }
